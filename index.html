@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lalcondo | ระบบจัดการเคสนายหน้าและค่าคอมมิชชั่น</title>
+    <!-- Google Fonts: Inter & Sarabun for Premium Multilingual Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Vanilla CSS Stylesheetheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Staff First-Use Registration Modal Block -->
+    <div id="first-use-blocker" class="first-use-overlay hidden">
+        <div class="first-use-card glass">
+            <div class="card-glow"></div>
+            <div class="first-use-header">
+                <div class="logo-icon-large">
+                    <i data-lucide="users-round"></i>
+                </div>
+                <h2>ลงทะเบียนพนักงานคนแรกก่อนเริ่มใช้งาน</h2>
+                <p>กรุณากรอกข้อมูลพนักงานเพื่อเข้าสู่ระบบ เพื่อใช้เป็นข้อมูลในการเลือกผู้ดูแลเคสและผู้รับค่าคอมมิชชั่นในส่วนต่างๆ</p>
+            </div>
+            <form id="first-use-form" class="modern-form">
+                <div class="form-group">
+                    <label for="first-staff-name"><i data-lucide="user"></i> ชื่อ-นามสกุล พนักงาน</label>
+                    <input type="text" id="first-staff-name" placeholder="เช่น สมชาย ใจดี" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="first-staff-phone"><i data-lucide="phone"></i> เบอร์โทรศัพท์</label>
+                    <input type="text" id="first-staff-phone" placeholder="เช่น 081-234-5678" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="first-staff-role"><i data-lucide="briefcase"></i> ตำแหน่งงาน</label>
+                    <input type="text" id="first-staff-role" placeholder="เช่น Senior Agent, Broker" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary full-width">
+                    <span>ลงทะเบียนและเริ่มต้นใช้งาน</span>
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Layout Wrapper -->
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar glass">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="logo-circle">LAL</div>
+                    <div class="brand-info">
+                        <span class="brand-text">LAL.<span>CONDO</span></span>
+                        <span class="brand-sub">Live A Life</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>แดชบอร์ด</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="cases">
+                    <i data-lucide="user-plus"></i>
+                    <span>ลงเคส / รายละเอียด</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="tracking">
+                    <i data-lucide="kanban-square"></i>
+                    <span>ติดตามเคส</span>
+                    <span class="badge" id="tracking-count">0</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="rentals">
+                    <i data-lucide="key-round"></i>
+                    <span>ปิดงานเช่า</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="sales">
+                    <i data-lucide="badge-dollar-sign"></i>
+                    <span>ปิดงานขาย</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="staff">
+                    <i data-lucide="users"></i>
+                    <span>ทะเบียนพนักงาน</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-status-card">
+                    <div class="avatar"><i data-lucide="user-check"></i></div>
+                    <div class="status-info">
+                        <p class="status-label">ระบบพร้อมใช้งาน</p>
+                        <p class="active-staff-count" id="sidebar-staff-count">พนักงาน: 0 คน</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Header Bar -->
+            <header class="app-header glass">
+                <div class="header-title">
+                    <h1 id="page-title">แดชบอร์ด</h1>
+                    <p class="header-subtitle" id="page-subtitle">ภาพรวมความเคลื่อนไหว ยอดขาย และค่าคอมมิชชั่นประจำวัน</p>
+                </div>
+                <div class="header-actions">
+                    <div class="date-display">
+                        <i data-lucide="calendar"></i>
+                        <span id="current-date-text">วันที่ --/--/----</span>
+                    </div>
+                    <button class="btn-secondary" id="btn-global-print">
+                        <i data-lucide="printer"></i>
+                        <span>พิมพ์ / PDF</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Viewport for Tabs -->
+            <div class="view-content" id="print-area">
+                
+                <!-- TAB 1: DASHBOARD -->
+                <section id="tab-dashboard" class="tab-panel active">
+                    <!-- Quick Summary KPIs Grid -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card glass rental-card">
+                            <div class="kpi-icon"><i data-lucide="sparkles"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">เคสใหม่วันนี้</span>
+                                <h3 class="kpi-value" id="kpi-new-today">0</h3>
+                                <span class="kpi-trend positive"><i data-lucide="trending-up"></i> รายวัน</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card glass tracking-card">
+                            <div class="kpi-icon"><i data-lucide="activity"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">เคสกำลังติดตาม</span>
+                                <h3 class="kpi-value" id="kpi-in-progress">0</h3>
+                                <span class="kpi-trend warning"><i data-lucide="clock"></i> อยู่ในกระบวนการ</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card glass viewing-card">
+                            <div class="kpi-icon"><i data-lucide="calendar-check"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">นัดดูห้อง</span>
+                                <h3 class="kpi-value" id="kpi-viewings">0</h3>
+                                <span class="kpi-trend info"><i data-lucide="eye"></i> การนัดหมาย</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card glass closed-rental-card">
+                            <div class="kpi-icon"><i data-lucide="key"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">ปิดเช่าแล้ว</span>
+                                <h3 class="kpi-value" id="kpi-rent-closed">0</h3>
+                                <span class="kpi-trend success"><i data-lucide="check-circle-2"></i> สัญญาเช่าสำเร็จ</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card glass closed-sale-card">
+                            <div class="kpi-icon"><i data-lucide="dollar-sign"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">ปิดขายแล้ว</span>
+                                <h3 class="kpi-value" id="kpi-sale-closed">0</h3>
+                                <span class="kpi-trend gold"><i data-lucide="trophy"></i> โอนกรรมสิทธิ์แล้ว</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary & Charts Grid -->
+                    <div class="dashboard-charts-grid">
+                        <div class="chart-card glass main-metric">
+                            <div class="chart-header">
+                                <h3><i data-lucide="line-chart"></i> รายได้และยอดรวมรายเดือน</h3>
+                                <div class="chart-stats">
+                                    <div class="stat-pill">
+                                        <span class="label">ยอดขาย:</span>
+                                        <strong id="dash-total-sales-volume">฿0</strong>
+                                    </div>
+                                    <div class="stat-pill">
+                                        <span class="label">รายได้บริษัท:</span>
+                                        <strong class="text-emerald" id="dash-total-revenue">฿0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="monthlyVolumeChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card glass commission-metric">
+                            <div class="chart-header">
+                                <h3><i data-lucide="pie-chart"></i> ส่วนแบ่งค่าคอมมิชชั่นรายคน</h3>
+                            </div>
+                            <div class="chart-container flex-center">
+                                <div class="empty-chart-indicator" id="commissions-empty">
+                                    <i data-lucide="pie-chart"></i>
+                                    <p>ยังไม่มีข้อมูลค่าคอมมิชชั่นสะสม</p>
+                                </div>
+                                <canvas id="staffCommissionChart" class="hidden"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff Commission Performance Table -->
+                    <div class="data-section glass mt-6">
+                        <div class="section-header">
+                            <div class="header-left">
+                                <i data-lucide="award"></i>
+                                <h3>ตารางสรุปรายได้ค่าคอมมิชชั่นพนักงาน</h3>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อพนักงาน</th>
+                                        <th>ตำแหน่ง</th>
+                                        <th>ปิดงานเช่า (เคส)</th>
+                                        <th>ปิดงานขาย (เคส)</th>
+                                        <th>ค่าคอมมิชชั่นเช่าสะสม</th>
+                                        <th>ค่าคอมมิชชั่นขายสะสม</th>
+                                        <th>ค่าคอมมิชชั่นรวมทั้งหมด</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-staff-table-body">
+                                    <!-- Rendered dynamically in app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: CASES / CLIENTS -->
+                <section id="tab-cases" class="tab-panel">
+                    <div class="split-view">
+                        <!-- Left Panel: Client Case Form -->
+                        <div class="form-container glass">
+                            <div class="form-header">
+                                <i data-lucide="user-plus"></i>
+                                <h3>ลงทะเบียนเคสลูกค้าใหม่</h3>
+                            </div>
+                            <form id="case-entry-form" class="modern-form">
+                                <input type="hidden" id="case-edit-id">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2">
+                                        <label for="case-client-name"><i data-lucide="user"></i> ชื่อลูกค้า <span class="required">*</span></label>
+                                        <input type="text" id="case-client-name" placeholder="ระบุชื่อลูกค้าผู้เช่า/ผู้ซื้อ" required>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="case-client-contact"><i data-lucide="phone"></i> เบอร์โทรศัพท์ / Line ID <span class="required">*</span></label>
+                                        <input type="text" id="case-client-contact" placeholder="เช่น 0812345678 / LineID" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="case-type"><i data-lucide="arrow-left-right"></i> ประเภทเคส</label>
+                                        <select id="case-type">
+                                            <option value="เช่า">เช่า (Rent)</option>
+                                            <option value="ซื้อ">ซื้อ (Buy/Sale)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="case-budget"><i data-lucide="wallet"></i> งบประมาณ (บาท)</label>
+                                        <input type="number" id="case-budget" placeholder="เช่น 15000 หรือ 5000000" min="0">
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="case-project"><i data-lucide="building"></i> โครงการที่สนใจ <span class="required">*</span></label>
+                                        <input type="text" id="case-project" placeholder="ชื่อคอนโด, หมู่บ้าน หรือย่านทำเล" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="case-date"><i data-lucide="calendar"></i> วันที่ทักมา <span class="required">*</span></label>
+                                        <input type="date" id="case-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="case-owner"><i data-lucide="users-2"></i> ผู้ดูแลเคส <span class="required">*</span></label>
+                                        <select id="case-owner" required>
+                                            <!-- Dynamically populated -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="case-status"><i data-lucide="info"></i> สถานะเคสเริ่มต้น</label>
+                                        <select id="case-status">
+                                            <option value="เคสใหม่">เคสใหม่</option>
+                                            <option value="คุยแล้ว">คุยแล้ว</option>
+                                            <option value="ส่งห้องแล้ว">ส่งห้องแล้ว</option>
+                                            <option value="นัดดูห้อง">นัดดูห้อง</option>
+                                            <option value="รอตัดสินใจ">รอตัดสินใจ</option>
+                                            <option value="จองแล้ว">จองแล้ว</option>
+                                            <option value="หลุด / ไม่สนใจ">หลุด / ไม่สนใจ</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="case-notes"><i data-lucide="pencil"></i> หมายเหตุ</label>
+                                        <textarea id="case-notes" rows="3" placeholder="ระบุความต้องการเพิ่มเติม เช่น สนใจชั้นสูง เลี้ยงสัตว์ได้ ที่จอดรถ ฯลฯ"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-actions mt-4">
+                                    <button type="button" class="btn-secondary" id="btn-clear-case">ล้างฟอร์ม</button>
+                                    <button type="submit" class="btn-primary" id="btn-save-case">บันทึกข้อมูลเคส</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Clients List -->
+                        <div class="data-section glass flex-grow">
+                            <div class="section-header">
+                                <div class="header-left">
+                                    <i data-lucide="layout-list"></i>
+                                    <h3>ฐานข้อมูลและสถานะลูกค้าทั้งหมด</h3>
+                                </div>
+                                <div class="search-box">
+                                    <i data-lucide="search"></i>
+                                    <input type="text" id="search-client" placeholder="ค้นหาชื่อ, โครงการ, เบอร์โทร...">
+                                </div>
+                            </div>
+                            <div class="filters-bar">
+                                <button class="filter-pill active" data-filter="all">ทั้งหมด</button>
+                                <button class="filter-pill" data-filter="เช่า">ประเภทเช่า</button>
+                                <button class="filter-pill" data-filter="ซื้อ">ประเภทซื้อ</button>
+                            </div>
+                            <div class="table-responsive select-rows">
+                                <table class="modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>วันที่ทักมา</th>
+                                            <th>ชื่อลูกค้า</th>
+                                            <th>ความต้องการ</th>
+                                            <th>โครงการที่สนใจ</th>
+                                            <th>งบประมาณ</th>
+                                            <th>ผู้ดูแล</th>
+                                            <th>สถานะ</th>
+                                            <th class="actions-col">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clients-table-body">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: TRACKING BOARD -->
+                <section id="tab-tracking" class="tab-panel">
+                    <div class="kanban-toolbar">
+                        <p class="toolbar-info"><i data-lucide="info"></i> คุณสามารถคลิกเพื่อเปลี่ยนสถานะเคสของลูกค้าอย่างรวดเร็ว ข้อมูลจะเชื่อมโยงไปยังแดชบอร์ดและรายงานการเงินโดยอัตโนมัติ</p>
+                    </div>
+                    <!-- Kanban Stages Layout -->
+                    <div class="kanban-board">
+                        
+                        <!-- Stage 1 -->
+                        <div class="kanban-column" data-stage="เคสใหม่">
+                            <div class="column-header stage-new">
+                                <span class="dot"></span>
+                                <h4>เคสใหม่</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-new-cards"></div>
+                        </div>
+
+                        <!-- Stage 2 -->
+                        <div class="kanban-column" data-stage="คุยแล้ว">
+                            <div class="column-header stage-talked">
+                                <span class="dot"></span>
+                                <h4>คุยแล้ว</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-talked-cards"></div>
+                        </div>
+
+                        <!-- Stage 3 -->
+                        <div class="kanban-column" data-stage="ส่งห้องแล้ว">
+                            <div class="column-header stage-sent">
+                                <span class="dot"></span>
+                                <h4>ส่งห้องแล้ว</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-sent-cards"></div>
+                        </div>
+
+                        <!-- Stage 4 -->
+                        <div class="kanban-column" data-stage="นัดดูห้อง">
+                            <div class="column-header stage-viewing">
+                                <span class="dot"></span>
+                                <h4>นัดดูห้อง</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-viewing-cards"></div>
+                        </div>
+
+                        <!-- Stage 5 -->
+                        <div class="kanban-column" data-stage="รอตัดสินใจ">
+                            <div class="column-header stage-waiting">
+                                <span class="dot"></span>
+                                <h4>รอตัดสินใจ</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-waiting-cards"></div>
+                        </div>
+
+                        <!-- Stage 6 -->
+                        <div class="kanban-column" data-stage="จองแล้ว">
+                            <div class="column-header stage-reserved">
+                                <span class="dot"></span>
+                                <h4>จองแล้ว</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-reserved-cards"></div>
+                        </div>
+
+                        <!-- Stage 7 -->
+                        <div class="kanban-column" data-stage="หลุด / ไม่สนใจ">
+                            <div class="column-header stage-lost">
+                                <span class="dot"></span>
+                                <h4>หลุด / ไม่สนใจ</h4>
+                                <span class="count-badge">0</span>
+                            </div>
+                            <div class="column-cards" id="stage-lost-cards"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: RENTALS CLOSINGS -->
+                <section id="tab-rentals" class="tab-panel">
+                    <div class="split-view">
+                        <!-- Left Panel: Closed Rental Form -->
+                        <div class="form-container glass">
+                            <div class="form-header">
+                                <i data-lucide="key-round"></i>
+                                <h3>ลงฟอร์มปิดสัญญาเช่าสำเร็จ</h3>
+                            </div>
+                            <form id="rental-closing-form" class="modern-form">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2">
+                                        <label for="rent-client-select"><i data-lucide="user-check"></i> เลือกลูกค้าที่จองแล้ว <span class="required">*</span></label>
+                                        <select id="rent-client-select" required>
+                                            <option value="" disabled selected>-- กรุณาเลือกลูกค้า --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-property-id"><i data-lucide="hash"></i> รหัสทรัพย์ <span class="required">*</span></label>
+                                        <input type="text" id="rent-property-id" placeholder="เช่น RT-10293" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-room-details"><i data-lucide="home"></i> โครงการ/ห้อง/ตึก/ชั้น <span class="required">*</span></label>
+                                        <input type="text" id="rent-room-details" placeholder="เช่น Life Asoke / 45A / A / 12" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-price"><i data-lucide="coins"></i> ค่าเช่ารายเดือน (บาท) <span class="required">*</span></label>
+                                        <input type="number" id="rent-price" placeholder="ระบุค่าเช่าตามสัญญา" required min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-start-date"><i data-lucide="calendar-range"></i> วันเริ่มสัญญาเช่า <span class="required">*</span></label>
+                                        <input type="date" id="rent-start-date" required>
+                                    </div>
+                                    
+                                    <div class="form-divider col-span-2">ผู้รับส่วนแบ่งค่าคอมมิชชั่น</div>
+
+                                    <div class="form-group">
+                                        <label for="rent-finder-client"><i data-lucide="user"></i> ผู้หาลูกค้า <span class="required">*</span></label>
+                                        <select id="rent-finder-client" required></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-commission-finder-client"><i data-lucide="wallet"></i> ค่าคอมผู้หาลูกค้า (บาท)</label>
+                                        <input type="number" id="rent-commission-finder-client" class="rental-comm-input" placeholder="0" min="0">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="rent-finder-room"><i data-lucide="door-open"></i> ผู้หาห้อง/ทรัพย์ <span class="required">*</span></label>
+                                        <select id="rent-finder-room" required></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-commission-finder-room"><i data-lucide="wallet"></i> ค่าคอมผู้หาห้อง (บาท)</label>
+                                        <input type="number" id="rent-commission-finder-room" class="rental-comm-input" placeholder="0" min="0">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="rent-showroom-agent"><i data-lucide="footprints"></i> คนพาดูห้อง <span class="required">*</span></label>
+                                        <select id="rent-showroom-agent" required></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rent-commission-showroom-agent"><i data-lucide="wallet"></i> ค่าคอมคนพาดูห้อง (บาท)</label>
+                                        <input type="number" id="rent-commission-showroom-agent" class="rental-comm-input" placeholder="0" min="0">
+                                    </div>
+
+                                    <div class="form-group col-span-2 hl-group">
+                                        <label for="rent-commission-total"><i data-lucide="gem"></i> ค่าคอมมิชชั่นรวมบริษัท (บาท) <span class="required">*</span></label>
+                                        <input type="number" id="rent-commission-total" placeholder="คำนวณอัตโนมัติหรือป้อนเอง" required min="0">
+                                        <small class="form-tips">ปกติสัญญา 1 ปี ค่าคอมเท่ากับค่าเช่า 1 เดือน (คลิกเพื่อคำนวณจากยอดรวมคนทำงานได้)</small>
+                                    </div>
+
+                                    <div class="form-group col-span-2">
+                                        <label for="rent-evidence-file"><i data-lucide="image"></i> แนบหลักฐานปิดเคสสำเร็จ (รูปสลิป / สัญญา)</label>
+                                        <div class="file-dropzone" id="rental-dropzone">
+                                            <i data-lucide="cloud-upload"></i>
+                                            <p>คลิกเพื่อเลือกไฟล์ หรือ ลากและวางไฟล์ภาพ</p>
+                                            <span class="file-name-display" id="rent-file-name">ไม่มีไฟล์แนบ</span>
+                                            <input type="file" id="rent-evidence-file" accept="image/*" class="hidden">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-actions mt-4">
+                                    <button type="submit" class="btn-primary full-width">บันทึกปิดสัญญาเช่า</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Closed Rentals List -->
+                        <div class="data-section glass flex-grow">
+                            <div class="section-header">
+                                <div class="header-left">
+                                    <i data-lucide="check-square"></i>
+                                    <h3>ประวัติการปิดงานเช่า</h3>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสทรัพย์</th>
+                                            <th>ลูกค้า</th>
+                                            <th>โครงการ/ห้อง</th>
+                                            <th>ค่าเช่า</th>
+                                            <th>เริ่มสัญญา</th>
+                                            <th>ค่าคอมรวม</th>
+                                            <th>หลักฐาน</th>
+                                            <th>การจัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rentals-table-body">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: SALES CLOSINGS -->
+                <section id="tab-sales" class="tab-panel">
+                    <div class="split-view">
+                        <!-- Left Panel: Closed Sale Form -->
+                        <div class="form-container glass">
+                            <div class="form-header">
+                                <i data-lucide="badge-dollar-sign"></i>
+                                <h3>ลงฟอร์มปิดสัญญาซื้อขายสำเร็จ</h3>
+                            </div>
+                            <form id="sale-closing-form" class="modern-form">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2">
+                                        <label for="sale-client-select"><i data-lucide="user-check"></i> เลือกลูกค้าที่จองแล้ว <span class="required">*</span></label>
+                                        <select id="sale-client-select" required>
+                                            <option value="" disabled selected>-- กรุณาเลือกลูกค้า --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sale-property-id"><i data-lucide="hash"></i> รหัสทรัพย์ <span class="required">*</span></label>
+                                        <input type="text" id="sale-property-id" placeholder="เช่น SL-90412" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sale-price"><i data-lucide="dollar-sign"></i> ราคาขายจริง (บาท) <span class="required">*</span></label>
+                                        <input type="number" id="sale-price" placeholder="ระบุราคาปิดขาย" required min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sale-company-revenue"><i data-lucide="coins"></i> รายได้บริษัท (บาท) <span class="required">*</span></label>
+                                        <input type="number" id="sale-company-revenue" placeholder="เช่น 3% ของราคาขาย" required min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sale-transfer-date"><i data-lucide="calendar"></i> วันโอนกรรมสิทธิ์ <span class="required">*</span></label>
+                                        <input type="date" id="sale-transfer-date" required>
+                                    </div>
+
+                                    <div class="form-divider col-span-2">ผู้เกี่ยวข้องและส่วนแบ่งค่าคอมฯ รายบุคคล</div>
+
+                                    <div class="form-group col-span-2">
+                                        <label><i data-lucide="users"></i> เพิ่มผู้ได้รับค่าคอมพนักงาน</label>
+                                        <div class="dynamic-stakeholder-row mt-2">
+                                            <select id="sale-temp-staff"></select>
+                                            <input type="number" id="sale-temp-comm" placeholder="จำนวนเงินค่าคอมฯ" min="0">
+                                            <button type="button" class="btn-secondary" id="btn-add-sale-stakeholder"><i data-lucide="plus"></i> เพิ่ม</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group col-span-2">
+                                        <div class="stakeholder-list-box">
+                                            <p class="box-title">รายชื่อผู้ได้รับส่วนแบ่งในเคสนี้:</p>
+                                            <div id="sale-stakeholders-container">
+                                                <!-- List of added stakeholders renders dynamically -->
+                                                <p class="placeholder-text-box">ยังไม่ได้ระบุผู้ได้รับส่วนแบ่งค่าคอมฯ</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group col-span-2">
+                                        <label for="sale-evidence-file"><i data-lucide="image"></i> แนบหลักฐานปิดเคสสำเร็จ (รูปสลิป / สัญญา / ใบโอน)</label>
+                                        <div class="file-dropzone" id="sale-dropzone">
+                                            <i data-lucide="cloud-upload"></i>
+                                            <p>คลิกเพื่อเลือกไฟล์ หรือ ลากและวางไฟล์ภาพ</p>
+                                            <span class="file-name-display" id="sale-file-name">ไม่มีไฟล์แนบ</span>
+                                            <input type="file" id="sale-evidence-file" accept="image/*" class="hidden">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-actions mt-4">
+                                    <button type="submit" class="btn-primary full-width">บันทึกปิดงานขาย</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Closed Sales List -->
+                        <div class="data-section glass flex-grow">
+                            <div class="section-header">
+                                <div class="header-left">
+                                    <i data-lucide="check-square"></i>
+                                    <h3>ประวัติการปิดงานขาย</h3>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสทรัพย์</th>
+                                            <th>ลูกค้า</th>
+                                            <th>ราคาขาย</th>
+                                            <th>รายได้บริษัท</th>
+                                            <th>วันโอน</th>
+                                            <th>ผู้รับส่วนแบ่งค่าคอม</th>
+                                            <th>หลักฐาน</th>
+                                            <th>การจัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sales-table-body">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 6: STAFF REGISTRATION -->
+                <section id="tab-staff" class="tab-panel">
+                    <div class="split-view">
+                        <!-- Left Panel: Register Staff Form -->
+                        <div class="form-container glass">
+                            <div class="form-header">
+                                <i data-lucide="user-plus"></i>
+                                <h3>ลงทะเบียนพนักงานเพิ่ม</h3>
+                            </div>
+                            <form id="staff-entry-form" class="modern-form">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2">
+                                        <label for="staff-name"><i data-lucide="user"></i> ชื่อ-นามสกุล <span class="required">*</span></label>
+                                        <input type="text" id="staff-name" placeholder="ระบุชื่อพนักงาน" required>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="staff-phone"><i data-lucide="phone"></i> เบอร์โทรศัพท์ / Line <span class="required">*</span></label>
+                                        <input type="text" id="staff-phone" placeholder="ระบุช่องทางติดต่อ" required>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="staff-role"><i data-lucide="briefcase"></i> ตำแหน่ง / บทบาท <span class="required">*</span></label>
+                                        <input type="text" id="staff-role" placeholder="เช่น Senior Broker, Customer Service" required>
+                                    </div>
+                                </div>
+                                <div class="form-actions mt-4">
+                                    <button type="submit" class="btn-primary full-width">บันทึกรายชื่อพนักงาน</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Staff Directory Table -->
+                        <div class="data-section glass flex-grow">
+                            <div class="section-header">
+                                <div class="header-left">
+                                    <i data-lucide="contact"></i>
+                                    <h3>รายชื่อพนักงานในระบบ</h3>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ลำดับ</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>เบอร์โทร / Line</th>
+                                            <th>ตำแหน่ง</th>
+                                            <th>วันที่ลงทะเบียน</th>
+                                            <th class="actions-col">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="staff-table-body">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- POPUP MODAL: CUSTOMER DETAILS -->
+    <div id="customer-popup-modal" class="modal-overlay hidden">
+        <div class="modal-container glass">
+            <div class="modal-header">
+                <div class="client-title-row">
+                    <span class="client-type-tag" id="pop-client-type">เช่า</span>
+                    <h2 id="pop-client-name">ชื่อลูกค้า</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-pop"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-details-grid">
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="phone"></i> เบอร์โทรศัพท์ / Line</span>
+                        <p class="detail-value" id="pop-client-contact">-</p>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="wallet"></i> งบประมาณลูกค้า</span>
+                        <p class="detail-value" id="pop-client-budget">฿0</p>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="building"></i> โครงการที่สนใจ</span>
+                        <p class="detail-value" id="pop-client-project">-</p>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="calendar"></i> วันที่ทักลูกค้า</span>
+                        <p class="detail-value" id="pop-client-date">-</p>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="user-square-2"></i> ผู้ดูแลเคส</span>
+                        <p class="detail-value" id="pop-client-owner">-</p>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label"><i data-lucide="alert-circle"></i> สถานะเคสปัจจุบัน</span>
+                        <p class="detail-value" id="pop-client-status">-</p>
+                    </div>
+                </div>
+
+                <div class="modal-textbox mt-4">
+                    <span class="textbox-label"><i data-lucide="pencil"></i> หมายเหตุเพิ่มเติม</span>
+                    <p class="textbox-content" id="pop-client-notes">ไม่มีข้อมูลหมายเหตุ</p>
+                </div>
+
+                <!-- Closing Details History Block inside Customer Popup -->
+                <div id="pop-closing-section" class="hidden mt-4">
+                    <div class="closing-divider">ข้อมูลการปิดเคสสำเร็จ</div>
+                    <div class="modal-details-grid">
+                        <div class="detail-card highlight-card">
+                            <span class="detail-label"><i data-lucide="hash"></i> รหัสทรัพย์ปิดสัญญา</span>
+                            <p class="detail-value" id="pop-close-property-id">-</p>
+                        </div>
+                        <div class="detail-card highlight-card">
+                            <span class="detail-label"><i data-lucide="gem"></i> ยอดการเงิน (ค่าเช่า/ราคาขาย)</span>
+                            <p class="detail-value" id="pop-close-value">฿0</p>
+                        </div>
+                        <div class="detail-card highlight-card col-span-2">
+                            <span class="detail-label"><i data-lucide="map-pin"></i> โครงการ/ห้อง/ตึก/ชั้น</span>
+                            <p class="detail-value" id="pop-close-room">-</p>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-label" id="pop-close-agent-lbl-1">ผู้ปิดงาน</span>
+                            <p class="detail-value" id="pop-close-agent-val-1">-</p>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-label" id="pop-close-agent-lbl-2">ผู้ได้รับค่าคอมหลัก</span>
+                            <p class="detail-value" id="pop-close-agent-val-2">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Close attachment display -->
+                    <div class="evidence-display-box mt-4" id="pop-evidence-box">
+                        <span class="textbox-label"><i data-lucide="file-check"></i> หลักฐานสัญญาสัญญา / การโอนค่าคอมฯ</span>
+                        <div class="evidence-image-container mt-2">
+                            <img src="" alt="หลักฐานปิดเคสสำเร็จ" id="pop-evidence-img" class="evidence-img">
+                            <p class="placeholder-text-box" id="pop-no-evidence">ไม่ได้แนบหลักฐาน</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-primary" id="btn-pop-edit-client"><i data-lucide="edit-3"></i> แก้ไขข้อมูลเคส</button>
+                <button class="btn-secondary" id="btn-pop-print-invoice"><i data-lucide="file-text"></i> พิมพ์ใบเคสลูกค้า</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Script File -->
+    <script src="app.js"></script>
+</body>
+</html>
